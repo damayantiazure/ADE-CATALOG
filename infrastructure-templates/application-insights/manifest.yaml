@@ -1,0 +1,25 @@
+name: ApplicationInsights
+version: 1.0.0
+summary: Creates an Application Insights
+description: Creates an Application Insights that allows you to monitor your application
+runner: ARM
+templatePath: azuredeploy.json
+parameters:
+- id: "location"
+  name: "location"
+  description: "Location to deploy the KeyVault"
+  default: "[resourceGroup().location]"
+  type: "string"
+  required: false
+- id: "appInsightName"
+  name: "appInsightName"
+  description: "Name of Application Insights"
+  default: ""
+  type: "string"
+  required: true
+- id: "laWorkspaceId"
+  name: "laWorkspaceId"
+  description: "Log analytics workspace id"
+  default: ""
+  type: "string"
+  required: true  

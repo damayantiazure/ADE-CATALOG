@@ -1,0 +1,1147 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.24.24.22086",
+      "templateHash": "17808237629056354886"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "metadata": {
+        "description": "Location."
+      }
+    },
+    "uamiName": {
+      "type": "string",
+      "metadata": {
+        "description": "User assigned managed identity name."
+      }
+    },
+    "vnetName": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual Network Name."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage account name."
+      }
+    },
+    "appGatewayName": {
+      "type": "string",
+      "metadata": {
+        "description": "Application Gateway Name."
+      }
+    }
+  },
+  "variables": {
+    "storageEndpointName": "[format('{0}-storage-endpoint', parameters('storageAccountName'))]",
+    "core": "core",
+    "storageServiceGroupName": "web",
+    "dnsZoneName": "[format('privatelink.{0}.{1}.windows.net', variables('storageServiceGroupName'), variables('core'))]",
+    "fqdn": "[format('{0}.z6.{1}.{2}.windows.net', parameters('storageAccountName'), variables('storageServiceGroupName'), variables('core'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('uamiName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "uamiName": {
+            "value": "[parameters('uamiName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "3892608652002756758"
+            }
+          },
+          "parameters": {
+            "uamiName": {
+              "type": "string",
+              "metadata": {
+                "description": "Specifies the name of the user assigned managed identity."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2018-11-30",
+              "name": "[parameters('uamiName')]",
+              "location": "[parameters('location')]"
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('uamiName')]"
+            },
+            "principalId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '2018-11-30').principalId]"
+            },
+            "tenantId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '2018-11-30').tenantId]"
+            },
+            "clientId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '2018-11-30').clientId]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('vnetName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "vnetName": {
+            "value": "[parameters('vnetName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "11986879365513129691"
+            }
+          },
+          "parameters": {
+            "vnetName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "addressPrefix": {
+              "type": "string",
+              "defaultValue": "10.2.0.0/16"
+            },
+            "defaultSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.2.0.0/24"
+            },
+            "backendSubnetAddressPrefix": {
+              "type": "string",
+              "defaultValue": "10.2.1.0/24"
+            },
+            "backendSubnetName": {
+              "type": "string",
+              "defaultValue": "backends"
+            },
+            "gatewaySubnetName": {
+              "type": "string",
+              "defaultValue": "gateway"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/virtualNetworks",
+              "apiVersion": "2023-06-01",
+              "name": "[parameters('vnetName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "addressSpace": {
+                  "addressPrefixes": [
+                    "[parameters('addressPrefix')]"
+                  ]
+                },
+                "dhcpOptions": {
+                  "dnsServers": []
+                },
+                "subnets": [
+                  {
+                    "name": "[parameters('gatewaySubnetName')]",
+                    "type": "Microsoft.Network/virtualNetworks/subnets",
+                    "properties": {
+                      "addressPrefix": "[parameters('defaultSubnetAddressPrefix')]",
+                      "serviceEndpoints": [],
+                      "delegations": [],
+                      "privateEndpointNetworkPolicies": "Disabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                  },
+                  {
+                    "name": "[parameters('backendSubnetName')]",
+                    "type": "Microsoft.Network/virtualNetworks/subnets",
+                    "properties": {
+                      "addressPrefix": "[parameters('backendSubnetAddressPrefix')]",
+                      "serviceEndpoints": [],
+                      "delegations": [],
+                      "privateEndpointNetworkPolicies": "Disabled",
+                      "privateLinkServiceNetworkPolicies": "Enabled"
+                    }
+                  }
+                ],
+                "virtualNetworkPeerings": [],
+                "enableDdosProtection": false
+              }
+            }
+          ],
+          "outputs": {
+            "vnetId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName'))]"
+            },
+            "vnetName": {
+              "type": "string",
+              "value": "[parameters('vnetName')]"
+            },
+            "vnetGatewaySubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-06-01').subnets[0].id]"
+            },
+            "vnetBackendSubnetId": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Network/virtualNetworks', parameters('vnetName')), '2023-06-01').subnets[1].id]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('storageAccountName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "accountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "uamiName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('uamiName')), '2022-09-01').outputs.name.value]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "14138072737926675251"
+            }
+          },
+          "parameters": {
+            "accountName": {
+              "type": "string"
+            },
+            "uamiName": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard_RAGRS"
+            },
+            "kind": {
+              "type": "string",
+              "defaultValue": "StorageV2"
+            },
+            "dnsEndpointType": {
+              "type": "string",
+              "defaultValue": "Standard"
+            },
+            "publicNetworkAccess": {
+              "type": "string",
+              "defaultValue": "Disabled"
+            },
+            "defaultToOAuthAuthentication": {
+              "type": "bool",
+              "defaultValue": false
+            },
+            "accessTier": {
+              "type": "string",
+              "defaultValue": "Hot"
+            }
+          },
+          "variables": {
+            "CONTRIBUTOR_ROLE_DEFINITION_ID": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Storage/storageAccounts",
+              "apiVersion": "2023-01-01",
+              "name": "[parameters('accountName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "[parameters('skuName')]"
+              },
+              "kind": "[parameters('kind')]",
+              "properties": {
+                "dnsEndpointType": "[parameters('dnsEndpointType')]",
+                "defaultToOAuthAuthentication": "[parameters('defaultToOAuthAuthentication')]",
+                "publicNetworkAccess": "[parameters('publicNetworkAccess')]",
+                "allowCrossTenantReplication": false,
+                "minimumTlsVersion": "TLS1_2",
+                "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": true,
+                "networkAcls": {
+                  "bypass": "AzureServices",
+                  "virtualNetworkRules": [],
+                  "ipRules": [],
+                  "defaultAction": "Deny"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                  "requireInfrastructureEncryption": false,
+                  "services": {
+                    "file": {
+                      "keyType": "Account",
+                      "enabled": true
+                    },
+                    "blob": {
+                      "keyType": "Account",
+                      "enabled": true
+                    }
+                  },
+                  "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "[parameters('accessTier')]"
+              }
+            },
+            {
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2020-04-01-preview",
+              "scope": "[format('Microsoft.Storage/storageAccounts/{0}', parameters('accountName'))]",
+              "name": "[guid('Contributor', parameters('accountName'))]",
+              "properties": {
+                "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('uamiName')), '2018-11-30').principalId]",
+                "roleDefinitionId": "[variables('CONTRIBUTOR_ROLE_DEFINITION_ID')]"
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('accountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('static-website-{0}', parameters('accountName'))]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "location": {
+                    "value": "[parameters('location')]"
+                  },
+                  "storageAccountName": {
+                    "value": "[parameters('accountName')]"
+                  },
+                  "userAssignedIdentityName": {
+                    "value": "[parameters('uamiName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.24.24.22086",
+                      "templateHash": "14599115934342415403"
+                    }
+                  },
+                  "parameters": {
+                    "location": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().location]"
+                    },
+                    "IndexDocument": {
+                      "type": "string",
+                      "defaultValue": "index.html"
+                    },
+                    "ErrorDocument404Path": {
+                      "type": "string",
+                      "defaultValue": "error.html"
+                    },
+                    "storageAccountName": {
+                      "type": "string"
+                    },
+                    "staticWebsiteState": {
+                      "type": "string",
+                      "defaultValue": "Enabled",
+                      "allowedValues": [
+                        "Enabled",
+                        "Disabled"
+                      ]
+                    },
+                    "userAssignedIdentityName": {
+                      "type": "string"
+                    },
+                    "now": {
+                      "type": "string",
+                      "defaultValue": "[utcNow('F')]"
+                    }
+                  },
+                  "variables": {
+                    "$fxv#0": "param (\r\n    [string]$IndexDocument = 'index.html',\r\n    [string]$ErrorDocument404Path = '404.html',\r\n    [string]$storageAccountName = '',\r\n    [validateset('Enabled', 'Disabled')]\r\n    [string]$StaticWebsiteState = 'Enabled'\r\n)\r\n\r\nfunction Get-StaticWebSiteState\r\n{\r\n    param (\r\n        [string]$storageAccountName\r\n    )\r\n    try\r\n    {\r\n        $t = Get-AzAccessToken -ResourceTypeName Storage -ErrorAction Stop\r\n        $splat = @{\r\n            Uri     = \"https://$storageAccountName.blob.core.windows.net/?restype=service&comp=properties\"\r\n            Method  = 'GET'\r\n            Headers = @{\r\n                Authorization  = \"$($t.Type) $($t.Token)\"\r\n                'x-ms-date'    = [datetime]::UtcNow.ToString('R')\r\n                'x-ms-version' = '2019-12-12'\r\n                ContentType    = 'application/xml'\r\n                ErrorAction    = 'Stop'\r\n                Verbose        = $true\r\n            }\r\n        }\r\n        Write-Host \"Requesting current static website state [$storageAccountName]\"\r\n        [xml]$current = (Invoke-RestMethod @splat) -replace '.+<?xml', '<?xml' # remove BOM\r\n\r\n        $StateLookup = @{\r\n            'true'  = 'Enabled'\r\n            'false' = 'Disabled'\r\n        }\r\n        return $StateLookup[$current.StorageServiceProperties.StaticWebsite.Enabled]\r\n    }\r\n    Catch\r\n    {\r\n        Write-Error \"Error getting current static website state: $_\"\r\n        return\r\n    }\r\n}\r\n\r\n$currentStaticWebsiteState = Get-StaticWebSiteState -storageAccountName $storageAccountName\r\n\r\nif ($currentStaticWebsiteState -eq $StaticWebsiteState)\r\n{\r\n    $SkipSet = '1'\r\n    $finalStaticWebsiteState = $currentStaticWebsiteState\r\n    Write-Host \"Static website state is already [$StaticWebsiteState]\"\r\n}\r\nelse \r\n{\r\n    $SkipSet = '0'\r\n    try\r\n    {\r\n        Write-Host \"Settings Static website state to [$StaticWebsiteState]\"\r\n        $ctx = New-AzStorageContext -StorageAccountName $storageAccountName -ErrorAction Stop\r\n        switch ($StaticWebsiteState)\r\n        {\r\n            'Enabled'\r\n            {\r\n                Enable-AzStorageStaticWebsite -Context $ctx -IndexDocument $IndexDocument -ErrorDocument404Path $ErrorDocument404Path\r\n            }\r\n            'Disabled'\r\n            {\r\n                Disable-AzStorageStaticWebsite -Context $ctx\r\n            }\r\n        }\r\n        $finalStaticWebsiteState = Get-StaticWebSiteState -storageAccountName $storageAccountName\r\n        Write-Host \"Static website state is now [$finalStaticWebsiteState]\"\r\n    }\r\n    Catch\r\n    {\r\n        Write-Error \"Error setting static website state to [$StaticWebsiteState]: $_\"\r\n        return\r\n    }\r\n}\r\n\r\n# $ctx = New-AzStorageContext -StorageAccountName $storageAccountName -ErrorAction Stop\r\n# $webContainer = Get-AzStorageContainer -Name '$web' -Context $ctx -ErrorAction Stop\r\n# $indexContent = '<html><head><title>Hello World</title></head><body><h1>Hello World</h1><p>This is your static web app, please deploy your code to get started.</p></body></html>'\r\n# $indexContent | Set-AzStorageBlobContent -Container $webContainer -Blob $IndexDocument -Context $ctx -Properties @{'ContentType'='text/html'} -ErrorAction Stop\r\n# $notFoundContent = '<html><head><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>'\r\n# $notFoundContent | Set-AzStorageBlobContent -Container $webContainer -Blob $ErrorDocument404Path -Context $ctx -Properties @{'ContentType'='text/html'} -ErrorAction Stop\r\n\r\n\r\n\r\n$DeploymentScriptOutputs = @{}\r\n$DeploymentScriptOutputs['SkipSet'] = $SkipSet\r\n$DeploymentScriptOutputs['StaticWebsiteState'] = $finalStaticWebsiteState"
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Resources/deploymentScripts",
+                      "apiVersion": "2020-10-01",
+                      "name": "[substring(take(replace(format('setStaticWebsite-{0}', parameters('storageAccountName')), '@', '_'), 64), 0, 1)]",
+                      "identity": {
+                        "type": "UserAssigned",
+                        "userAssignedIdentities": {
+                          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('userAssignedIdentityName')))]": {}
+                        }
+                      },
+                      "location": "[parameters('location')]",
+                      "kind": "AzurePowerShell",
+                      "properties": {
+                        "azPowerShellVersion": "7.5.0",
+                        "arguments": "[format(' -IndexDocument {0} -ErrorDocument404Path {1} -storageAccountName {2} -StaticWebsiteState {3}', parameters('IndexDocument'), parameters('ErrorDocument404Path'), parameters('storageAccountName'), parameters('staticWebsiteState'))]",
+                        "scriptContent": "[variables('$fxv#0')]",
+                        "forceUpdateTag": "[parameters('now')]",
+                        "cleanupPreference": "OnSuccess",
+                        "retentionInterval": "P1D",
+                        "timeout": "PT5M"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "SkipSet": {
+                      "type": "bool",
+                      "value": "[bool(int(reference(resourceId('Microsoft.Resources/deploymentScripts', substring(take(replace(format('setStaticWebsite-{0}', parameters('storageAccountName')), '@', '_'), 64), 0, 1)), '2020-10-01').outputs.SkipSet))]"
+                    },
+                    "StaticWebsiteState": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Resources/deploymentScripts', substring(take(replace(format('setStaticWebsite-{0}', parameters('storageAccountName')), '@', '_'), 64), 0, 1)), '2020-10-01').outputs.StaticWebsiteState]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('accountName'))]",
+                "[extensionResourceId(resourceId('Microsoft.Storage/storageAccounts', parameters('accountName')), 'Microsoft.Authorization/roleAssignments', guid('Contributor', parameters('accountName')))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "blob-service",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "accountName": {
+                    "value": "[parameters('accountName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.24.24.22086",
+                      "templateHash": "15647919822169350153"
+                    }
+                  },
+                  "parameters": {
+                    "accountName": {
+                      "type": "string"
+                    },
+                    "serviceName": {
+                      "type": "string",
+                      "defaultValue": "default"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Storage/storageAccounts/blobServices",
+                      "apiVersion": "2023-01-01",
+                      "name": "[format('{0}/{1}', parameters('accountName'), parameters('serviceName'))]",
+                      "properties": {
+                        "changeFeed": {
+                          "enabled": false
+                        },
+                        "restorePolicy": {
+                          "enabled": false
+                        },
+                        "containerDeleteRetentionPolicy": {
+                          "enabled": true,
+                          "days": 7
+                        },
+                        "cors": {
+                          "corsRules": []
+                        },
+                        "deleteRetentionPolicy": {
+                          "allowPermanentDelete": false,
+                          "enabled": true,
+                          "days": 7
+                        },
+                        "isVersioningEnabled": false
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "blobServiceId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Storage/storageAccounts/blobServices', parameters('accountName'), parameters('serviceName'))]"
+                    },
+                    "blobServiceName": {
+                      "type": "string",
+                      "value": "[parameters('serviceName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('accountName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "file-service",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "accountName": {
+                    "value": "[parameters('accountName')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.24.24.22086",
+                      "templateHash": "987206285424591714"
+                    }
+                  },
+                  "parameters": {
+                    "accountName": {
+                      "type": "string"
+                    },
+                    "serviceName": {
+                      "type": "string",
+                      "defaultValue": "default"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Storage/storageAccounts/fileServices",
+                      "apiVersion": "2023-01-01",
+                      "name": "[format('{0}/{1}', parameters('accountName'), parameters('serviceName'))]",
+                      "properties": {
+                        "protocolSettings": {
+                          "smb": {}
+                        },
+                        "cors": {
+                          "corsRules": []
+                        },
+                        "shareDeleteRetentionPolicy": {
+                          "enabled": true,
+                          "days": 7
+                        }
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "fileServiceId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Storage/storageAccounts/fileServices', parameters('accountName'), parameters('serviceName'))]"
+                    },
+                    "fileServiceName": {
+                      "type": "string",
+                      "value": "[parameters('serviceName')]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', parameters('accountName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "id": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Storage/storageAccounts', parameters('accountName'))]"
+            },
+            "name": {
+              "type": "string",
+              "value": "[parameters('accountName')]"
+            },
+            "properties": {
+              "type": "object",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('accountName')), '2023-01-01')]"
+            },
+            "primaryEndpoints": {
+              "type": "object",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('accountName')), '2023-01-01').primaryEndpoints]"
+            },
+            "primaryLocation": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', parameters('accountName')), '2023-01-01', 'full').location]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('uamiName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('dnsZoneName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "dnsZoneName": {
+            "value": "[variables('dnsZoneName')]"
+          },
+          "vnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName')), '2022-09-01').outputs.vnetId.value]"
+          },
+          "vnetName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName')), '2022-09-01').outputs.vnetName.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "11498227787660014424"
+            }
+          },
+          "parameters": {
+            "dnsZoneName": {
+              "type": "string"
+            },
+            "vnetName": {
+              "type": "string"
+            },
+            "vnetId": {
+              "type": "string"
+            }
+          },
+          "variables": {
+            "linkName": "[format('link-{0}-{1}', parameters('dnsZoneName'), parameters('vnetName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/privateDnsZones",
+              "apiVersion": "2020-06-01",
+              "name": "[parameters('dnsZoneName')]",
+              "location": "global"
+            },
+            {
+              "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+              "apiVersion": "2020-06-01",
+              "name": "[format('{0}/{1}', parameters('dnsZoneName'), variables('linkName'))]",
+              "location": "global",
+              "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                  "id": "[parameters('vnetId')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('dnsZoneName'))]"
+              ]
+            }
+          ],
+          "outputs": {
+            "dnsZoneId": {
+              "type": "string",
+              "value": "[resourceId('Microsoft.Network/privateDnsZones', parameters('dnsZoneName'))]"
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[variables('storageEndpointName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "storageServiceGroupName": {
+            "value": "[variables('storageServiceGroupName')]"
+          },
+          "dnsZoneId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', variables('dnsZoneName')), '2022-09-01').outputs.dnsZoneId.value]"
+          },
+          "endpointName": {
+            "value": "[variables('storageEndpointName')]"
+          },
+          "storageAccountName": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('storageAccountName')), '2022-09-01').outputs.name.value]"
+          },
+          "subnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName')), '2022-09-01').outputs.vnetBackendSubnetId.value]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "3985510562594775891"
+            }
+          },
+          "parameters": {
+            "subnetId": {
+              "type": "string"
+            },
+            "endpointName": {
+              "type": "string"
+            },
+            "storageAccountName": {
+              "type": "string"
+            },
+            "storageServiceGroupName": {
+              "type": "string"
+            },
+            "dnsZoneId": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            }
+          },
+          "variables": {
+            "networkIterfaceCardName": "[format('{0}-nic', parameters('endpointName'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/privateEndpoints",
+              "apiVersion": "2023-06-01",
+              "name": "[parameters('endpointName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "subnet": {
+                  "id": "[parameters('subnetId')]"
+                },
+                "customNetworkInterfaceName": "[variables('networkIterfaceCardName')]",
+                "privateLinkServiceConnections": [
+                  {
+                    "name": "[parameters('endpointName')]",
+                    "properties": {
+                      "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+                      "groupIds": [
+                        "[parameters('storageServiceGroupName')]"
+                      ]
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+              "apiVersion": "2022-01-01",
+              "name": "[format('{0}/{1}', parameters('endpointName'), 'default')]",
+              "properties": {
+                "privateDnsZoneConfigs": [
+                  {
+                    "name": "[format('privatelink-{0}-core-windows-net', parameters('storageServiceGroupName'))]",
+                    "properties": {
+                      "privateDnsZoneId": "[parameters('dnsZoneId')]"
+                    }
+                  }
+                ]
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Network/privateEndpoints', parameters('endpointName'))]"
+              ]
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', variables('dnsZoneName'))]",
+        "[resourceId('Microsoft.Resources/deployments', parameters('storageAccountName'))]",
+        "[resourceId('Microsoft.Resources/deployments', parameters('vnetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
+      "name": "[parameters('appGatewayName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "gatewayName": {
+            "value": "[parameters('appGatewayName')]"
+          },
+          "subnetId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', parameters('vnetName')), '2022-09-01').outputs.vnetGatewaySubnetId.value]"
+          },
+          "backendFqdn": {
+            "value": "[variables('fqdn')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.24.24.22086",
+              "templateHash": "13702035833182376034"
+            }
+          },
+          "parameters": {
+            "gatewayName": {
+              "type": "string"
+            },
+            "subnetId": {
+              "type": "string"
+            },
+            "backendFqdn": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]"
+            },
+            "instanceCount": {
+              "type": "int",
+              "defaultValue": 2
+            },
+            "skuName": {
+              "type": "string",
+              "defaultValue": "Standard_v2"
+            },
+            "skuTier": {
+              "type": "string",
+              "defaultValue": "Standard_v2"
+            }
+          },
+          "variables": {
+            "gatewayIPConfigName": "[format('{0}IpConfig', parameters('gatewayName'))]",
+            "gatewayPublicIpAddressName": "[format('{0}PublicIp', parameters('gatewayName'))]",
+            "appGwPublicFrontendIpIPv4Name": "[format('{0}PublicFrontendIpIPv4', parameters('gatewayName'))]",
+            "appGwPortName": "[format('{0}Port', parameters('gatewayName'))]",
+            "listenerName": "FrontEndListener",
+            "backendAddressPoolName": "BackendPool",
+            "backendPoolSettingsName": "BackendPoolSettings",
+            "requestRoutingRuleName": "RoutingToStorageAccount",
+            "healthProbeName": "DefaultHealthProbe"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Network/applicationGateways",
+              "apiVersion": "2023-06-01",
+              "name": "[parameters('gatewayName')]",
+              "location": "[parameters('location')]",
+              "properties": {
+                "sku": {
+                  "name": "[parameters('skuName')]",
+                  "tier": "[parameters('skuTier')]"
+                },
+                "gatewayIPConfigurations": [
+                  {
+                    "name": "[variables('gatewayIPConfigName')]",
+                    "properties": {
+                      "subnet": {
+                        "id": "[parameters('subnetId')]"
+                      }
+                    }
+                  }
+                ],
+                "sslCertificates": [],
+                "trustedRootCertificates": [],
+                "trustedClientCertificates": [],
+                "sslProfiles": [],
+                "frontendIPConfigurations": [
+                  {
+                    "name": "[variables('appGwPublicFrontendIpIPv4Name')]",
+                    "properties": {
+                      "privateIPAllocationMethod": "Dynamic",
+                      "publicIPAddress": {
+                        "id": "[reference(resourceId('Microsoft.Resources/deployments', variables('gatewayPublicIpAddressName')), '2022-09-01').outputs.publicIPAddressId.value]"
+                      }
+                    }
+                  }
+                ],
+                "frontendPorts": [
+                  {
+                    "name": "[variables('appGwPortName')]",
+                    "properties": {
+                      "port": 80
+                    }
+                  }
+                ],
+                "backendAddressPools": [
+                  {
+                    "name": "[variables('backendAddressPoolName')]",
+                    "properties": {
+                      "backendAddresses": [
+                        {
+                          "fqdn": "[parameters('backendFqdn')]"
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "loadDistributionPolicies": [],
+                "backendHttpSettingsCollection": [
+                  {
+                    "name": "[variables('backendPoolSettingsName')]",
+                    "properties": {
+                      "port": 443,
+                      "protocol": "Https",
+                      "cookieBasedAffinity": "Disabled",
+                      "pickHostNameFromBackendAddress": true,
+                      "affinityCookieName": "ApplicationGatewayAffinity",
+                      "requestTimeout": 20,
+                      "probe": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/probes', parameters('gatewayName'), variables('healthProbeName'))]"
+                      }
+                    }
+                  }
+                ],
+                "backendSettingsCollection": [],
+                "httpListeners": [
+                  {
+                    "name": "[variables('listenerName')]",
+                    "properties": {
+                      "frontendIPConfiguration": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', parameters('gatewayName'), variables('appGwPublicFrontendIpIPv4Name'))]"
+                      },
+                      "frontendPort": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', parameters('gatewayName'), variables('appGwPortName'))]"
+                      },
+                      "protocol": "Http",
+                      "hostNames": [],
+                      "requireServerNameIndication": false,
+                      "customErrorConfigurations": []
+                    }
+                  }
+                ],
+                "listeners": [],
+                "urlPathMaps": [],
+                "requestRoutingRules": [
+                  {
+                    "name": "[variables('requestRoutingRuleName')]",
+                    "properties": {
+                      "ruleType": "Basic",
+                      "priority": 1,
+                      "httpListener": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', parameters('gatewayName'), variables('listenerName'))]"
+                      },
+                      "backendAddressPool": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', parameters('gatewayName'), variables('backendAddressPoolName'))]"
+                      },
+                      "backendHttpSettings": {
+                        "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', parameters('gatewayName'), variables('backendPoolSettingsName'))]"
+                      }
+                    }
+                  }
+                ],
+                "routingRules": [],
+                "probes": [
+                  {
+                    "name": "[variables('healthProbeName')]",
+                    "properties": {
+                      "protocol": "Https",
+                      "path": "/index.html",
+                      "interval": 30,
+                      "timeout": 30,
+                      "unhealthyThreshold": 3,
+                      "pickHostNameFromBackendHttpSettings": true,
+                      "minServers": 0,
+                      "match": {
+                        "statusCodes": [
+                          "404"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "rewriteRuleSets": [],
+                "redirectConfigurations": [],
+                "privateLinkConfigurations": [],
+                "enableHttp2": true,
+                "autoscaleConfiguration": {
+                  "minCapacity": 0,
+                  "maxCapacity": "[parameters('instanceCount')]"
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('gatewayPublicIpAddressName'))]"
+              ]
+            },
+            {
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[variables('gatewayPublicIpAddressName')]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "publicIpAddressName": {
+                    "value": "[variables('gatewayPublicIpAddressName')]"
+                  },
+                  "location": {
+                    "value": "[parameters('location')]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.24.24.22086",
+                      "templateHash": "16669931630214336441"
+                    }
+                  },
+                  "parameters": {
+                    "publicIpAddressName": {
+                      "type": "string"
+                    },
+                    "location": {
+                      "type": "string",
+                      "defaultValue": "[resourceGroup().location]"
+                    },
+                    "skuName": {
+                      "type": "string",
+                      "defaultValue": "Standard"
+                    },
+                    "skuTier": {
+                      "type": "string",
+                      "defaultValue": "Regional"
+                    },
+                    "publicIPAllocationMethod": {
+                      "type": "string",
+                      "defaultValue": "Static"
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.Network/publicIPAddresses",
+                      "apiVersion": "2023-06-01",
+                      "name": "[parameters('publicIpAddressName')]",
+                      "location": "[parameters('location')]",
+                      "sku": {
+                        "name": "[parameters('skuName')]",
+                        "tier": "[parameters('skuTier')]"
+                      },
+                      "properties": {
+                        "publicIPAddressVersion": "IPv4",
+                        "publicIPAllocationMethod": "[parameters('publicIPAllocationMethod')]",
+                        "idleTimeoutInMinutes": 4,
+                        "ipTags": []
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "publicIPAddressName": {
+                      "type": "string",
+                      "value": "[parameters('publicIpAddressName')]"
+                    },
+                    "publicIPAddressId": {
+                      "type": "string",
+                      "value": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName'))]"
+                    },
+                    "publicIPAddress": {
+                      "type": "string",
+                      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressName')), '2023-06-01').ipAddress]"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', parameters('vnetName'))]"
+      ]
+    }
+  ]
+}

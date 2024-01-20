@@ -1,0 +1,37 @@
+name: AzureStaticWebsite
+version: 1.0.0
+summary: Creates an Azure Static Website
+description: Creates an Azure Static Website that allows you to host your static website, it also provisions an azure application gateway to allow you to use custom domain names
+runner: ARM
+templatePath: azuredeploy.json
+parameters:
+- id: "location"
+  name: "location"
+  description: "Location to deploy the KeyVault"
+  default: "[resourceGroup().location]"
+  type: "string"
+  required: false
+- id: "uamiName"
+  name: "uamiName"
+  description: "Name of the user assigned managed identity"
+  default: ""
+  type: "string"
+  required: true
+- id: "vnetName"
+  name: "vnetName"
+  description: "Name of the virtual network"
+  default: ""
+  type: "string"
+  required: true
+- id: "storageAccountName"
+  name: "storageAccountName"
+  description: "Name of the storage account"
+  default: ""
+  type: "string"
+  required: true
+- id: "appGatewayName"
+  name: "appGatewayName"
+  description: "Name of the application gateway"
+  default: ""
+  type: "string"
+  required: true
